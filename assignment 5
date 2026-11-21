@@ -1,1 +1,273 @@
 
+import sqlite3
+import time
+import re
+import random
+from collections import Counter
+
+# -----------------------------------
+# B4.1 SENTIMENT ANALYSIS
+# -----------------------------------
+
+POSITIVE = {"good", "clean", "fast", "helpful", "improved"}
+NEGATIVE = {"bad", "dirty", "slow", "rude", "smoke", "broken"}
+NEGATORS = {"not", "never", "no"}
+
+def score(text):
+    words = re.findall(r"[a-z']+", text.lower())
+    total = 0
+
+    for i, word in enumerate(words):
+        value = 1 if word in POSITIVE else -1 if word in NEGATIVE else 0
+
+        if i > 0 and words[i - 1] in NEGATORS:
+            value = -value
+
+        total += value
+
+    return total
+
+
+def label(text):
+    s = score(text)
+
+    if s > 0:
+        return "positive"
+    elif s < 0:
+        return "negative"
+    return "neutral"
+
+
+# -----------------------------------
+# EXTRACTIVE SUMMARISER
+# -----------------------------------
+
+def summarise(text, k=2):
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+
+    stop_words = {
+        "the", "a", "an", "is", "are", "was",
+        "were", "and", "of", "to", "in", "from"
+    }
+
+    words = [
+        re.findall(r"[a-z']+", sentence.lower())
+        for sentence in sentences
+    ]
+
+    frequency = Counter(
+        word for sentence in words
+        for word in sentence if word not in stop_words
+    )
+
+    ranked = sorted(
+        range(len(sentences)),
+        key=lambda i: sum(
+            frequency[word]
+            for word in words[i]
+            if word not in stop_words
+        ),
+        reverse=True
+    )
+
+    selected = sorted(ranked[:k])
+
+    return " ".join(sentences[i] for i in selected)
+
+
+# -----------------------------------
+# 50 CITIZEN COMPLAINTS
+# -----------------------------------
+
+complaints = [
+    ("Roads are clean and buses are fast.", "positive"),
+    ("Smoke from the factory is bad.", "negative"),
+    ("The staff are not helpful.", "negative"),
+    ("The roads are dirty.", "negative"),
+    ("The service is good.", "positive"),
+    ("The transport system is slow.", "negative"),
+    ("The streets are clean.", "positive"),
+    ("The air is bad and full of smoke.", "negative"),
+    ("The workers are helpful.", "positive"),
+    ("The road is broken.", "negative"),
+    ("The service improved.", "positive"),
+    ("The buses are fast.", "positive"),
+    ("The area is dirty.", "negative"),
+    ("The factory produces smoke.", "negative"),
+    ("The roads are good.", "positive"),
+    ("The staff are rude.", "negative"),
+    ("The environment is clean.", "positive"),
+    ("The service is slow.", "negative"),
+    ("The road is not bad.", "positive"),
+    ("The transport is helpful.", "positive"),
+    ("The air is dirty.", "negative"),
+    ("The roads improved.", "positive"),
+    ("The factory smoke is harmful.", "negative"),
+    ("The workers are not rude.", "positive"),
+    ("The buses are slow.", "negative"),
+    ("The streets are clean and good.", "positive"),
+    ("The road is broken and dirty.", "negative"),
+    ("The service is helpful.", "positive"),
+    ("The air quality is bad.", "negative"),
+    ("The transport service improved.", "positive"),
+    ("The staff are not helpful.", "negative"),
+    ("The roads are fast and clean.", "positive"),
+    ("Smoke makes the environment dirty.", "negative"),
+    ("The service is good and helpful.", "positive"),
+    ("The buses are broken.", "negative"),
+    ("The streets improved.", "positive"),
+    ("The factory smoke is bad.", "negative"),
+    ("The workers are helpful and good.", "positive"),
+    ("The roads are dirty and broken.", "negative"),
+    ("The air is clean.", "positive"),
+    ("The transport is slow and bad.", "negative"),
+    ("The service is improved.", "positive"),
+    ("The staff are rude and unhelpful.", "negative"),
+    ("The road is not dirty.", "positive"),
+    ("The buses are fast and good.", "positive"),
+    ("The environment is dirty.", "negative"),
+    ("The service is not bad.", "positive"),
+    ("The factory produces bad smoke.", "negative"),
+    ("The streets are clean and improved.", "positive"),
+    ("The road is broken and slow.", "negative")
+]
+
+correct = 0
+
+print("\nSENTIMENT ANALYSIS RESULTS")
+
+for complaint, actual in complaints:
+    predicted = label(complaint)
+
+    if predicted == actual:
+        correct += 1
+
+    print(predicted, "|", complaint)
+
+accuracy = (correct / len(complaints)) * 100
+
+print("\nTotal Complaints:", len(complaints))
+print("Correct Predictions:", correct)
+print("Agreement:", round(accuracy, 2), "%")
+
+
+# -----------------------------------
+# B4.1 COMPLAINT SUMMARISER
+# -----------------------------------
+
+print("\nCOMPLAINT SUMMARY")
+
+sample_text = (
+    "The roads are dirty. "
+    "Smoke from the factory is bad. "
+    "The transport service is slow. "
+    "The streets need cleaning."
+)
+
+print(summarise(sample_text, 2))
+
+
+# -----------------------------------
+# B4.2 SQLITE DATABASE AND INDEX
+# -----------------------------------
+
+print("\nDATABASE PERFORMANCE TEST")
+
+con = sqlite3.connect(":memory:")
+
+con.execute("""
+CREATE TABLE readings (
+    station TEXT,
+    day TEXT,
+    pm25 REAL
+)
+""")
+
+# Generate 100 stations with 15-minute readings
+random.seed(42)
+
+rows = []
+
+for station in range(100):
+    for day in range(30):
+        for reading in range(96):
+            rows.append((
+                f"Station_{station}",
+                f"2026-10-{day+1:02d}",
+                random.uniform(10, 200)
+            ))
+
+con.executemany(
+    "INSERT INTO readings VALUES (?, ?, ?)",
+    rows
+)
+
+con.commit()
+
+print("Total Readings:", len(rows))
+
+
+# Query before index
+query = """
+SELECT AVG(pm25)
+FROM readings
+WHERE station = ? AND day = ?
+"""
+
+start = time.perf_counter()
+
+for _ in range(100):
+    con.execute(
+        query,
+        ("Station_50", "2026-10-15")
+    ).fetchone()
+
+before = time.perf_counter() - start
+
+
+# Create index
+con.execute("""
+CREATE INDEX idx_station_day
+ON readings(station, day)
+""")
+
+con.commit()
+
+
+# Query after index
+start = time.perf_counter()
+
+for _ in range(100):
+    con.execute(
+        query,
+        ("Station_50", "2026-10-15")
+    ).fetchone()
+
+after = time.perf_counter() - start
+
+print("Time Before Index:", round(before, 5), "seconds")
+print("Time After Index:", round(after, 5), "seconds")
+
+if after > 0:
+    print("Performance Ratio:", round(before / after, 2))
+
+
+# -----------------------------------
+# B4.3 PRODUCTION DECISION
+# -----------------------------------
+
+print("\nFINAL ENGINEERING DECISION")
+
+print("1. Store readings in an SQL database.")
+print("2. Clean and validate data before storage.")
+print("3. Use indexes for faster station and date searches.")
+print("4. Use Python for sentiment analysis.")
+print("5. Use extractive summarisation for complaints.")
+print("6. Evaluate AI results with human-labelled complaints.")
+print("7. Use trained machine learning if accuracy is insufficient.")
+print("8. Keep human review for important complaints.")
+
+con.close()
+
+print("\nPROGRAM EXECUTED SUCCESSFULLY")
+
