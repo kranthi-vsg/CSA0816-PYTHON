@@ -1,1 +1,96 @@
+# TASK 12 - Re-evaluate and Adapt the Design
 
+# Standard and Seasonal Rate Cards
+STANDARD_CARD = {
+    "base": 30.00,
+    "fat_step": 0.40,
+    "snf_step": 0.30
+}
+
+SEASONAL_CARD = {
+    "base": 32.00,
+    "fat_step": 0.45,
+    "snf_step": 0.30
+}
+
+FAT_STEP = 0.1
+SNF_STEP = 0.1
+
+BONUS_THRESHOLD = 500.0
+BONUS_PER_LITRE = 0.50
+
+
+# Select Rate Card Based on Month
+def select_rate_card(month):
+    if 4 <= month <= 6:
+        return SEASONAL_CARD
+    else:
+        return STANDARD_CARD
+
+
+# Calculate Rate Per Litre
+def rate_per_litre(fat, snf, card):
+    fat_steps = round((fat - 3.5) / FAT_STEP)
+    snf_steps = round((snf - 8.5) / SNF_STEP)
+
+    rate = (
+        card["base"]
+        + fat_steps * card["fat_step"]
+        + snf_steps * card["snf_step"]
+    )
+
+    return round(rate, 2)
+
+
+# Calculate Ten-Day Payment
+def ten_day_payment(litres, fat, snf, month, ten_day_litres):
+    if not 1 <= month <= 12:
+        raise ValueError("Invalid month")
+
+    if litres < 0 or ten_day_litres < 0:
+        raise ValueError("Litres cannot be negative")
+
+    if not 2.0 <= fat <= 7.0:
+        raise ValueError("Fat must be between 2.0 and 7.0")
+
+    if snf < 0:
+        raise ValueError("SNF cannot be negative")
+
+    card = select_rate_card(month)
+
+    rate = rate_per_litre(fat, snf, card)
+    amount = litres * rate
+
+    if ten_day_litres > BONUS_THRESHOLD:
+        amount += litres * BONUS_PER_LITRE
+
+    return round(amount, 2)
+
+
+# Test Cases
+print("TASK 12 - MILK PAYMENT CALCULATOR")
+print("----------------------------------")
+
+print("April Seasonal Rate:", select_rate_card(4))
+print("July Standard Rate:", select_rate_card(7))
+
+payment1 = ten_day_payment(10, 3.5, 8.5, 4, 501)
+payment2 = ten_day_payment(10, 3.5, 8.5, 7, 500)
+payment3 = ten_day_payment(10, 4.2, 8.7, 5, 600)
+
+print("\nPayment Results:")
+print("Seasonal Payment:", payment1)
+print("Standard Payment:", payment2)
+print("Seasonal Payment with Bonus:", payment3)
+
+# Validation
+assert select_rate_card(4)["base"] == 32.00
+assert select_rate_card(7)["base"] == 30.00
+assert ten_day_payment(10, 3.5, 8.5, 4, 500) == 320.00
+assert ten_day_payment(10, 3.5, 8.5, 4, 501) == 325.00
+
+print("\nAll Tests Passed Successfully!")
+
+print("\nConclusion:")
+print("The redesigned program supports seasonal rates")
+print("and applies a bonus when ten-day supply exceeds 500 litres.")
