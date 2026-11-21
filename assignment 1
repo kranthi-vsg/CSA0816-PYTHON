@@ -1,1 +1,25 @@
-
+C. Adapted implementation 
+STANDARD_CARD = {"base": 30.00, "fat_step": 0.40, "snf_step": 0.30} 
+SEASONAL_CARD = {"base": 32.00, "fat_step": 0.45, "snf_step": 0.30} 
+FAT_STEP = 0.1 
+SNF_STEP = 0.1 
+BONUS_THRESHOLD = 500.0 
+BONUS_PER_LITRE = 0.50 
+def select_rate_card(month): 
+"""Return the rate card for a month (1–12).""" 
+return SEASONAL_CARD if 4 <= month <= 6 else STANDARD_CARD 
+def rate_per_litre(fat, snf, card): 
+"""Calculate the rate using the selected rate card.""" 
+fat_steps = round((fat - 3.5) / FAT_STEP) 
+snf_steps = round((snf - 8.5) / SNF_STEP) 
+return round(card["base"] + fat_steps * card["fat_step"] + snf_steps * card["snf_step"], 2) 
+def ten_day_payment(litres, fat, snf, month, ten_day_litres): 
+"""Return payment including the applicable ten-day volume bonus.""" 
+card = select_rate_card(month) 
+amount = litres * rate_per_litre(fat, snf, card) 
+if ten_day_litres > BONUS_THRESHOLD: 
+amount += litres * BONUS_PER_LITRE 
+return round(amount, 2) 
+Assumption: the seasonal rate uses the same SNF step value as the original rate card because the changed 
+requirement specifies a new base rate and fat-step value but does not specify a new SNF-step value. Confirm 
+this assumption with the union before production use.
