@@ -1,1 +1,116 @@
+import time
+import random
 
+# Q7: DIAGNOSE, REDESIGN AND VALIDATE
+
+# Generate input data
+numbers = [random.randint(1, 1500) for _ in range(3000)]
+
+
+# ORIGINAL PROGRAM
+def original_program(data):
+    duplicates = []
+    comparisons = 0
+
+    for i in range(len(data)):
+        for j in range(i + 1, len(data)):
+            comparisons += 1
+
+            if data[i] == data[j] and data[i] not in duplicates:
+                duplicates.append(data[i])
+
+    return sorted(duplicates), comparisons
+
+
+# REDESIGNED PROGRAM
+def redesigned_program(data):
+    seen = set()
+    duplicates = set()
+    comparisons = 0
+
+    for num in data:
+        comparisons += 1
+
+        if num in seen:
+            duplicates.add(num)
+        else:
+            seen.add(num)
+
+    return sorted(duplicates), comparisons
+
+
+# A. DIAGNOSE THE BOTTLENECK
+print("Q7 - DIAGNOSE, REDESIGN AND VALIDATE")
+print("=" * 45)
+
+print("\nA. BOTTLENECK DIAGNOSIS")
+print("Original program uses nested loops.")
+print("Repeated comparisons increase execution time.")
+print("Time Complexity: O(n^2)")
+
+
+# B. DESIGN OBJECTIVE
+print("\nB. DESIGN OBJECTIVE")
+print("Reduce repeated comparisons.")
+print("Improve execution time for large inputs.")
+print("Maintain the same output.")
+
+
+# C. REDESIGNED SOLUTION
+print("\nC. REDESIGNED SOLUTION")
+print("Original: Nested loop method")
+print("Redesigned: Set-based method")
+print("Extra Memory Required: O(n)")
+print("Average Time Complexity: O(n)")
+
+
+# E. IMPLEMENT AND VALIDATE
+start = time.perf_counter()
+original_result, original_count = original_program(numbers)
+original_time = time.perf_counter() - start
+
+start = time.perf_counter()
+new_result, new_count = redesigned_program(numbers)
+new_time = time.perf_counter() - start
+
+
+# D. PREDICT BEFORE IMPLEMENTING
+print("\nD. PERFORMANCE PREDICTION")
+print("Expected fewer comparisons and faster execution.")
+print("Expected complexity improvement: O(n^2) to O(n).")
+
+
+# E. RESULTS
+print("\nE. IMPLEMENTATION AND VALIDATION")
+print("Input Size:", len(numbers))
+print("Original Comparisons:", original_count)
+print("Redesigned Lookups:", new_count)
+
+print("Original Time:", round(original_time, 6), "seconds")
+print("Redesigned Time:", round(new_time, 6), "seconds")
+
+print("\nValidation:")
+if original_result == new_result:
+    print("SUCCESS - Both programs produce the same output.")
+else:
+    print("FAILED - Outputs do not match.")
+
+
+# F. FINAL EVALUATION
+print("\nF. FINAL DESIGN EVALUATION")
+
+if original_time > new_time:
+    improvement = ((original_time - new_time) / original_time) * 100
+    print("Performance Improvement:", round(improvement, 2), "%")
+else:
+    print("No timing improvement measured in this run.")
+
+print("Original Complexity: O(n^2)")
+print("Redesigned Complexity: O(n) Average")
+print("Space Complexity: O(n)")
+
+print("\nCONCLUSION")
+print("The redesigned program reduces repeated comparisons.")
+print("Sets provide faster average lookup operations.")
+print("The trade-off is additional memory usage.")
+print("The original method may be suitable for small inputs.")
