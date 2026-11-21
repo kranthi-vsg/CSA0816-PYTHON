@@ -1,1 +1,43 @@
+from pathlib import Path
 
+
+def save_returns(books):
+    with open("returns.log", "a", encoding="utf-8") as log:
+        for book in books:
+            log.write(book.strip() + "\n")
+
+
+def process(day_file):
+    try:
+        with open(day_file, "r", encoding="utf-8") as file:
+            books = [line.strip() for line in file if line.strip()]
+
+        save_returns(books)
+        print("Books saved successfully")
+
+    except FileNotFoundError as error:
+        print("Missing file:", error)
+
+        with open("error.log", "a", encoding="utf-8") as log:
+            log.write(f"{day_file}: {error}\n")
+
+    except PermissionError as error:
+        print("Permission denied:", error)
+
+        with open("error.log", "a", encoding="utf-8") as log:
+            log.write(f"{day_file}: {error}\n")
+
+    except UnicodeDecodeError as error:
+        print("Encoding error:", error)
+
+        with open("error.log", "a", encoding="utf-8") as log:
+            log.write(f"{day_file}: {error}\n")
+
+    finally:
+        print("Processing completed")
+
+
+if __name__ == "__main__":
+    process("day1.txt")
+    process("day2.txt")
+    process("day3.txt")
