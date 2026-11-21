@@ -1,1 +1,67 @@
+import time
+import random
 
+# Original Program: Duplicate Detection using Nested Loops
+def original_duplicates(numbers):
+    duplicates = []
+
+    for i in range(len(numbers)):
+        for j in range(i + 1, len(numbers)):
+            if numbers[i] == numbers[j] and numbers[i] not in duplicates:
+                duplicates.append(numbers[i])
+
+    return duplicates
+
+
+# Redesigned Program: Optimized using Sets
+def optimized_duplicates(numbers):
+    seen = set()
+    duplicates = set()
+
+    for num in numbers:
+        if num in seen:
+            duplicates.add(num)
+        else:
+            seen.add(num)
+
+    return sorted(duplicates)
+
+
+# Generate Input
+numbers = [random.randint(1, 5000) for _ in range(10000)]
+
+# Test Original Program
+start = time.perf_counter()
+original_result = original_duplicates(numbers)
+original_time = time.perf_counter() - start
+
+# Test Redesigned Program
+start = time.perf_counter()
+optimized_result = optimized_duplicates(numbers)
+optimized_time = time.perf_counter() - start
+
+# Display Results
+print("Q7 - Diagnose, Redesign and Validate")
+print("------------------------------------")
+print("Input Size:", len(numbers))
+print("Original Duplicates:", original_result)
+print("Optimized Duplicates:", optimized_result)
+print("\nPerformance Comparison")
+print("Original Execution Time:", original_time, "seconds")
+print("Optimized Execution Time:", optimized_time, "seconds")
+
+print("\nComplexity Analysis")
+print("Original Time Complexity: O(n^2)")
+print("Optimized Time Complexity: O(n) average")
+print("Optimized Space Complexity: O(n)")
+
+# Validation
+if original_result == optimized_result:
+    print("\nValidation: SUCCESS")
+    print("Both programs produce the same result.")
+else:
+    print("\nValidation: FAILED")
+
+print("\nConclusion:")
+print("The redesigned program uses sets to reduce repeated comparisons.")
+print("It improves average execution time with additional memory usage.")
